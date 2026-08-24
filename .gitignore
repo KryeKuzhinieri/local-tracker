@@ -12,3 +12,12 @@ repo/
 .venv/
 .idea/
 .vscode/
+
+# Personal tracking data and recovery snapshots
+**/data.json
+**/data.backup.json
+**/history/data-*.json
+local-tracker-backups/
+tracker-data/
+user-data/
+*.tracker-backup.json
