@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
 
@@ -67,6 +67,25 @@ def test_report_groups_entries(service: TrackerService) -> None:
     total, projects = service.report_totals(date.today(), date.today())
     assert total == 25 * 60
     assert projects[("Build", "#40c057")] == 25 * 60
+
+
+def test_daily_total_counts_only_time_overlapping_that_day(
+    service: TrackerService,
+) -> None:
+    project = service.add_project("Night work", "#7c6ff0")
+    task = service.add_task("Deploy", project.id)
+    day = date(2026, 8, 24)
+    day_start = datetime.combine(day, time.min).astimezone(timezone.utc)
+    entry = service.start(task.id)
+    service.update_entry(
+        entry.id,
+        task.id,
+        "",
+        day_start - timedelta(minutes=30),
+        day_start + timedelta(hours=1),
+    )
+
+    assert service.total_for_day(day) == 60 * 60
 
 
 def test_store_recovers_from_backup(tmp_path) -> None:

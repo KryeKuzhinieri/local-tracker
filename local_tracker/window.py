@@ -483,8 +483,9 @@ class MainWindow(Adw.ApplicationWindow):
         if self._destroyed:
             return GLib.SOURCE_REMOVE
         active = self.service.active_entry
-        if active and self.get_visible():
-            self.timer_label.set_label(format_duration(active.duration_seconds()))
+        if self.get_visible():
+            if active:
+                self.timer_label.set_label(format_duration(active.duration_seconds()))
             self._refresh_daily_total()
         return GLib.SOURCE_CONTINUE
 

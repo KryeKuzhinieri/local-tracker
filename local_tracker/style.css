@@ -34,6 +34,13 @@ window {
   letter-spacing: 0.02em;
 }
 
+.daily-total {
+  color: #979ba8;
+  font-size: 16px;
+  font-weight: 600;
+  font-feature-settings: "tnum";
+}
+
 .eyebrow {
   color: #979ba8;
   font-size: 12px;
