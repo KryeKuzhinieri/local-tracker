@@ -58,8 +58,18 @@ class MainWindow(Adw.ApplicationWindow):
         self.stack = Adw.ViewStack()
         self.tracker_page = self._build_tracker_page()
         self.report_page = self._build_report_page()
-        self.stack.add_titled(self.tracker_page, "tracker", "Tracker")
-        self.stack.add_titled(self.report_page, "reports", "Reports")
+        self.stack.add_titled_with_icon(
+            self.tracker_page,
+            "tracker",
+            "Tracker",
+            "media-playback-start-symbolic",
+        )
+        self.stack.add_titled_with_icon(
+            self.report_page,
+            "reports",
+            "Reports",
+            "view-list-symbolic",
+        )
         self.stack.connect(
             "notify::visible-child-name",
             lambda *_: self._refresh_report()
@@ -71,6 +81,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.set_content(toolbar)
         self.service.subscribe(self.refresh)
+        self.connect("close-request", self._hide_to_tray)
         self.connect("destroy", self._on_destroy)
         self._timer_source = GLib.timeout_add_seconds(1, self._tick)
         self.refresh()
@@ -468,6 +479,10 @@ class MainWindow(Adw.ApplicationWindow):
         if self._timer_source:
             GLib.source_remove(self._timer_source)
             self._timer_source = 0
+
+    def _hide_to_tray(self, *_args) -> bool:
+        self.set_visible(False)
+        return True
 
     @staticmethod
     def _clear(listbox: Gtk.ListBox) -> None:

@@ -4,12 +4,25 @@ A focused, dark-mode time tracker for GNOME. Local Tracker has no account,
 network integration, analytics, or server. Projects, reusable tasks, notes, and
 time entries are stored in one local JSON file with atomic writes and a backup.
 
+## Screenshots
+
+The screenshots use demonstration data only.
+
+### Tracker
+
+![Local Tracker timer view](screenshots/tracker.png)
+
+### Reports
+
+![Local Tracker report view](screenshots/reports.png)
+
 ## Features
 
 - Start, stop, switch, edit, and delete time entries
 - Reusable tasks grouped by colored projects
 - Project totals and date-range reports
-- GNOME notification controls while the window is closed
+- Persistent GNOME tray controls for start, stop, show, and quit
+- Closing the window hides it while the tray process stays available
 - Crash-safe active timer restoration
 - Native GTK 4 and libadwaita interface
 - Flatpak sandbox with no network permission

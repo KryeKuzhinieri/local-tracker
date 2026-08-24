@@ -22,10 +22,13 @@ class LocalTrackerApplication(Adw.Application):
         self.service: TrackerService | None = None
         self.window = None
         self.indicator: StatusNotifier | None = None
+        self._tray_held = False
         self._timer_held = False
 
         self.create_action("quit", self.on_quit, ["<primary>q"])
         self.create_action("show", self.on_show)
+        self.create_action("show-tracker", self.on_show_tracker, ["<primary>1"])
+        self.create_action("show-reports", self.on_show_reports, ["<primary>2"])
         self.create_action("stop-timer", self.on_stop_timer)
         self.create_action("about", self.on_about)
 
@@ -50,6 +53,8 @@ class LocalTrackerApplication(Adw.Application):
             return
         self.indicator = StatusNotifier(self, APP_ID)
         self.indicator.start()
+        self.hold()
+        self._tray_held = True
         self.service.subscribe(self._sync_background_state)
         self._sync_background_state()
 
@@ -105,9 +110,54 @@ class LocalTrackerApplication(Adw.Application):
     def on_show(self, *_args) -> None:
         self.activate()
 
+    def on_show_tracker(self, *_args) -> None:
+        self.activate()
+        self.window.stack.set_visible_child_name("tracker")
+
+    def on_show_reports(self, *_args) -> None:
+        self.activate()
+        self.window.stack.set_visible_child_name("reports")
+
     def on_stop_timer(self, *_args) -> None:
         if self.service:
             self.service.stop()
+
+    def last_startable_task(self):
+        if not self.service:
+            return None
+        for entry in sorted(
+            self.service.data.entries,
+            key=lambda candidate: candidate.start_at,
+            reverse=True,
+        ):
+            try:
+                task = self.service.task(entry.task_id)
+                project = self.service.project(task.project_id)
+            except ValueError:
+                continue
+            if not task.archived and not project.archived:
+                return task
+        tasks = self.service.active_tasks()
+        return tasks[0] if tasks else None
+
+    def start_last_timer(self) -> bool:
+        if not self.service or self.service.active_entry:
+            return GLib.SOURCE_REMOVE
+        task = self.last_startable_task()
+        if task:
+            self.service.start(task.id)
+        else:
+            self.activate()
+        return GLib.SOURCE_REMOVE
+
+    def stop_timer_from_indicator(self) -> bool:
+        if self.service:
+            self.service.stop()
+        return GLib.SOURCE_REMOVE
+
+    def quit_from_indicator(self) -> bool:
+        self.on_quit()
+        return GLib.SOURCE_REMOVE
 
     def on_quit(self, *_args) -> None:
         if self.service and self.service.active_entry:
