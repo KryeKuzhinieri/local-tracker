@@ -213,13 +213,46 @@ class TrackerService:
         self, start: date, end: date
     ) -> tuple[int, dict[tuple[str, str], int]]:
         totals: dict[tuple[str, str], int] = defaultdict(int)
-        total = 0
-        now = utc_now()
-        for entry in self.entries_between(start, end):
-            seconds = entry.duration_seconds(now)
-            total += seconds
-            totals[(entry.project_name, entry.project_color)] += seconds
+        for project_totals in self.daily_project_totals(start, end).values():
+            for project, seconds in project_totals.items():
+                totals[project] += seconds
+        total = sum(totals.values())
         return total, dict(totals)
+
+    def daily_project_totals(
+        self, start: date, end: date, now: datetime | None = None
+    ) -> dict[date, dict[tuple[str, str], int]]:
+        """Split entry durations across local days and group them by project."""
+        if end < start:
+            return {}
+        current = now or utc_now()
+        totals: dict[date, dict[tuple[str, str], int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
+        for entry in self.data.entries:
+            entry_start = datetime.fromisoformat(entry.start_at.replace("Z", "+00:00"))
+            entry_end = (
+                datetime.fromisoformat(entry.end_at.replace("Z", "+00:00"))
+                if entry.end_at
+                else current
+            )
+            first_day = max(start, entry_start.astimezone().date())
+            last_day = min(end, entry_end.astimezone().date())
+            day = first_day
+            while day <= last_day:
+                day_start = datetime.combine(day, time.min).astimezone(timezone.utc)
+                day_end = datetime.combine(
+                    day + timedelta(days=1), time.min
+                ).astimezone(timezone.utc)
+                overlap_start = max(entry_start, day_start)
+                overlap_end = min(entry_end, day_end)
+                if overlap_end > overlap_start:
+                    project = (entry.project_name, entry.project_color)
+                    totals[day][project] += int(
+                        (overlap_end - overlap_start).total_seconds()
+                    )
+                day += timedelta(days=1)
+        return {day: dict(projects) for day, projects in totals.items()}
 
     def total_for_day(self, day: date, now: datetime | None = None) -> int:
         """Return seconds overlapping a local calendar day, including a running timer."""

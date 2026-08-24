@@ -86,6 +86,9 @@ def test_daily_total_counts_only_time_overlapping_that_day(
     )
 
     assert service.total_for_day(day) == 60 * 60
+    assert service.daily_project_totals(day, day) == {
+        day: {("Night work", "#7c6ff0"): 60 * 60}
+    }
 
 
 def test_store_recovers_from_backup(tmp_path) -> None:

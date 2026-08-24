@@ -323,9 +323,10 @@ class ManagerWindow(Adw.Window):
             self.project_list.append(
                 self._item_row(
                     project.name,
-                    "Archived" if project.archived else project.color,
+                    "Archived" if project.archived else "Active",
                     lambda _button, item=project: self._edit(item),
                     lambda _button, item=project: self._remove(item),
+                    project.color,
                 )
             )
 
@@ -351,11 +352,17 @@ class ManagerWindow(Adw.Window):
                     subtitle,
                     lambda _button, item=task: self._edit(item),
                     lambda _button, item=task: self._remove(item),
+                    project.color,
                 )
             )
 
-    def _item_row(self, title: str, subtitle: str, edit_cb, remove_cb) -> Gtk.Widget:
+    def _item_row(
+        self, title: str, subtitle: str, edit_cb, remove_cb, color: str
+    ) -> Gtk.Widget:
         row = Adw.ActionRow(title=title, subtitle=subtitle)
+        color_dot = Gtk.Label()
+        color_dot.set_markup(f'<span foreground="{color}">●</span>')
+        row.add_prefix(color_dot)
         edit = Gtk.Button(icon_name="document-edit-symbolic", valign=Gtk.Align.CENTER)
         edit.set_tooltip_text("Edit")
         edit.connect("clicked", edit_cb)

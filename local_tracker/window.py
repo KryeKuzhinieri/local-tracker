@@ -4,6 +4,7 @@ from datetime import date, datetime
 
 from gi.repository import Adw, Gio, GLib, Gtk
 
+from .charts import TimeBarChart
 from .dialogs import EntryEditor, ManagerWindow, error_dialog
 from .models import Project, Task, TimeEntry, from_iso
 from .service import TrackerError, TrackerService
@@ -19,6 +20,12 @@ def format_duration(seconds: int, *, compact: bool = False) -> str:
 
 def local_datetime(value: str) -> datetime:
     return from_iso(value).astimezone()
+
+
+def project_markup(name: str, color: str, suffix: str = "") -> str:
+    safe_name = GLib.markup_escape_text(name)
+    safe_suffix = GLib.markup_escape_text(suffix)
+    return f'<span foreground="{color}">●</span> {safe_name}{safe_suffix}'
 
 
 class MainWindow(Adw.ApplicationWindow):
@@ -136,6 +143,10 @@ class MainWindow(Adw.ApplicationWindow):
         form = Gtk.Grid(column_spacing=12, row_spacing=12)
         form.set_column_homogeneous(True)
         self.project_dropdown = Gtk.DropDown()
+        project_factory = Gtk.SignalListItemFactory()
+        project_factory.connect("setup", self._project_factory_setup)
+        project_factory.connect("bind", self._project_factory_bind)
+        self.project_dropdown.set_factory(project_factory)
         self.project_dropdown.connect("notify::selected", self._project_changed)
         self.task_dropdown = Gtk.DropDown()
         self.task_dropdown.connect("notify::selected", self._selection_changed)
@@ -215,6 +226,17 @@ class MainWindow(Adw.ApplicationWindow):
         top.append(filters)
         page.append(top)
 
+        chart_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        chart_card.add_css_class("surface-card")
+        chart_title = Gtk.Label(label="ACTIVITY", xalign=0)
+        chart_title.add_css_class("eyebrow")
+        chart_title.set_margin_top(14)
+        chart_title.set_margin_start(18)
+        self.report_chart = TimeBarChart()
+        chart_card.append(chart_title)
+        chart_card.append(self.report_chart)
+        page.append(chart_card)
+
         summary = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         summary.add_css_class("hero-card")
         total_title = Gtk.Label(label="TOTAL TRACKED", xalign=0)
@@ -247,6 +269,22 @@ class MainWindow(Adw.ApplicationWindow):
         box.append(label)
         box.append(widget)
         return box
+
+    def _project_factory_setup(self, _factory, list_item) -> None:
+        label = Gtk.Label(xalign=0)
+        list_item.set_child(label)
+
+    def _project_factory_bind(self, _factory, list_item) -> None:
+        label = list_item.get_child()
+        item = list_item.get_item()
+        position = list_item.get_position()
+        if (
+            isinstance(label, Gtk.Label)
+            and isinstance(item, Gtk.StringObject)
+            and position < len(self.projects)
+        ):
+            project = self.projects[position]
+            label.set_markup(project_markup(item.get_string(), project.color))
 
     def refresh(self) -> None:
         if self._destroyed:
@@ -361,7 +399,9 @@ class MainWindow(Adw.ApplicationWindow):
         if active:
             self.status_label.set_label("TRACKING NOW")
             self.active_title.set_label(active.task_name)
-            self.active_project.set_label(active.project_name)
+            self.active_project.set_markup(
+                project_markup(active.project_name, active.project_color)
+            )
             self.timer_label.set_label(format_duration(active.duration_seconds()))
         else:
             self.status_label.set_label("READY TO TRACK")
@@ -387,10 +427,13 @@ class MainWindow(Adw.ApplicationWindow):
         title = Gtk.Label(label=entry.task_name, xalign=0, ellipsize=3)
         title.add_css_class("heading")
         start = local_datetime(entry.start_at)
-        subtitle_text = f"{entry.project_name} · {start.strftime('%a, %d %b · %H:%M')}"
+        subtitle_text = f" · {start.strftime('%a, %d %b · %H:%M')}"
         if entry.note:
             subtitle_text += f" · {entry.note}"
-        subtitle = Gtk.Label(label=subtitle_text, xalign=0, ellipsize=3)
+        subtitle = Gtk.Label(xalign=0, ellipsize=3)
+        subtitle.set_markup(
+            project_markup(entry.project_name, entry.project_color, subtitle_text)
+        )
         subtitle.add_css_class("muted")
         text.append(title)
         text.append(subtitle)
@@ -447,15 +490,22 @@ class MainWindow(Adw.ApplicationWindow):
                 error_dialog(self, f"Use dates in YYYY-MM-DD format. {error}")
             return
 
-        total, totals = self.service.report_totals(start, end)
+        daily_totals = self.service.daily_project_totals(start, end)
+        self.report_chart.set_data(start, end, daily_totals)
+        totals: dict[tuple[str, str], int] = {}
+        for project_totals in daily_totals.values():
+            for project, seconds in project_totals.items():
+                totals[project] = totals.get(project, 0) + seconds
+        total = sum(totals.values())
         self.report_total.set_label(format_duration(total))
         self._clear_box(self.project_totals)
-        for (name, _color), seconds in sorted(
+        for (name, color), seconds in sorted(
             totals.items(), key=lambda item: item[1], reverse=True
         ):
             line = Gtk.Box(spacing=8)
             line.set_margin_top(3)
-            project = Gtk.Label(label=name, xalign=0, hexpand=True)
+            project = Gtk.Label(xalign=0, hexpand=True)
+            project.set_markup(project_markup(name, color))
             project.add_css_class("muted")
             duration = Gtk.Label(label=format_duration(seconds))
             line.append(project)
