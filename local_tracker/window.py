@@ -40,6 +40,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.projects: list[Project] = []
         self.tasks: list[Task] = []
         self._destroyed = False
+        self.report_page_index = 0
+        self.report_page_size = 20
+        self.report_entries: list[TimeEntry] = []
 
         toolbar = Adw.ToolbarView()
         header = Adw.HeaderBar()
@@ -143,12 +146,14 @@ class MainWindow(Adw.ApplicationWindow):
         form = Gtk.Grid(column_spacing=12, row_spacing=12)
         form.set_column_homogeneous(True)
         self.project_dropdown = Gtk.DropDown()
+        self.project_dropdown.set_enable_search(True)
         project_factory = Gtk.SignalListItemFactory()
         project_factory.connect("setup", self._project_factory_setup)
         project_factory.connect("bind", self._project_factory_bind)
         self.project_dropdown.set_factory(project_factory)
         self.project_dropdown.connect("notify::selected", self._project_changed)
         self.task_dropdown = Gtk.DropDown()
+        self.task_dropdown.set_enable_search(True)
         self.task_dropdown.connect("notify::selected", self._selection_changed)
         form.attach(self._field("PROJECT", self.project_dropdown), 0, 0, 1, 1)
         form.attach(self._field("TASK", self.task_dropdown), 1, 0, 1, 1)
@@ -217,7 +222,7 @@ class MainWindow(Adw.ApplicationWindow):
         )
         apply = Gtk.Button(label="Apply")
         apply.add_css_class("suggested-action")
-        apply.connect("clicked", self._refresh_report)
+        apply.connect("clicked", self._apply_report_filter)
         filters = Gtk.Box(spacing=8, halign=Gtk.Align.END, hexpand=True)
         filters.append(self.report_start)
         filters.append(Gtk.Label(label="to"))
@@ -258,6 +263,26 @@ class MainWindow(Adw.ApplicationWindow):
         self.report_list.add_css_class("separators")
         report_card.append(self.report_list)
         page.append(report_card)
+
+        pagination = Gtk.Box(spacing=10, halign=Gtk.Align.CENTER)
+        self.report_previous = Gtk.Button(icon_name="go-previous-symbolic")
+        self.report_previous.set_tooltip_text("Previous page")
+        self.report_previous.connect("clicked", self._previous_report_page)
+        self.report_page_label = Gtk.Label(label="0 entries")
+        self.report_next = Gtk.Button(icon_name="go-next-symbolic")
+        self.report_next.set_tooltip_text("Next page")
+        self.report_next.connect("clicked", self._next_report_page)
+        self.report_page_size_dropdown = Gtk.DropDown.new_from_strings(
+            ["20 per page", "50 per page", "100 per page"]
+        )
+        self.report_page_size_dropdown.connect(
+            "notify::selected", self._report_page_size_changed
+        )
+        pagination.append(self.report_previous)
+        pagination.append(self.report_page_label)
+        pagination.append(self.report_next)
+        pagination.append(self.report_page_size_dropdown)
+        page.append(pagination)
         scroll.set_child(page)
         return scroll
 
@@ -512,9 +537,61 @@ class MainWindow(Adw.ApplicationWindow):
             line.append(duration)
             self.project_totals.append(line)
 
+        self.report_entries = self.service.entries_between(start, end)
+        self._render_report_page()
+
+    def _apply_report_filter(self, *_args) -> None:
+        self.report_page_index = 0
+        self._refresh_report()
+
+    def _render_report_page(self) -> None:
+        entry_count = len(self.report_entries)
+        page_count = (
+            (entry_count + self.report_page_size - 1) // self.report_page_size
+            if entry_count
+            else 0
+        )
+        self.report_page_index = min(
+            self.report_page_index,
+            max(0, page_count - 1),
+        )
+        start = self.report_page_index * self.report_page_size
+        end = start + self.report_page_size
+
         self._clear(self.report_list)
-        for entry in self.service.entries_between(start, end):
+        for entry in self.report_entries[start:end]:
             self.report_list.append(self._entry_row(entry))
+
+        if page_count:
+            self.report_page_label.set_label(
+                f"Page {self.report_page_index + 1} of {page_count} · "
+                f"{entry_count} entries"
+            )
+        else:
+            self.report_page_label.set_label("0 entries")
+        self.report_previous.set_sensitive(self.report_page_index > 0)
+        self.report_next.set_sensitive(self.report_page_index + 1 < page_count)
+
+    def _previous_report_page(self, *_args) -> None:
+        if self.report_page_index > 0:
+            self.report_page_index -= 1
+            self._render_report_page()
+
+    def _next_report_page(self, *_args) -> None:
+        page_count = (
+            len(self.report_entries) + self.report_page_size - 1
+        ) // self.report_page_size
+        if self.report_page_index + 1 < page_count:
+            self.report_page_index += 1
+            self._render_report_page()
+
+    def _report_page_size_changed(self, dropdown: Gtk.DropDown, *_args) -> None:
+        page_sizes = (20, 50, 100)
+        selected = dropdown.get_selected()
+        if selected < len(page_sizes):
+            self.report_page_size = page_sizes[selected]
+            self.report_page_index = 0
+            self._render_report_page()
 
     def _open_manager(self, *_args) -> None:
         ManagerWindow(self, self.service).present()

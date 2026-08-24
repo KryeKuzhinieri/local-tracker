@@ -95,6 +95,7 @@ class EntryEditor(Adw.Window):
             for task in self.tasks
         ]
         self.task_dropdown = Gtk.DropDown.new_from_strings(names)
+        self.task_dropdown.set_enable_search(True)
         selected = next(
             (
                 index
@@ -205,6 +206,7 @@ class ItemEditor(Adw.Window):
             self.secondary = Gtk.DropDown.new_from_strings(
                 [project.name for project in self.projects]
             )
+            self.secondary.set_enable_search(True)
             selected = next(
                 (
                     index
@@ -298,6 +300,7 @@ class ManagerWindow(Adw.Window):
         form = Gtk.Box(spacing=10)
         self.task_name = Gtk.Entry(placeholder_text="New task name", hexpand=True)
         self.task_project = Gtk.DropDown()
+        self.task_project.set_enable_search(True)
         add = Gtk.Button(label="Add task")
         add.add_css_class("suggested-action")
         add.connect("clicked", self._add_task)
