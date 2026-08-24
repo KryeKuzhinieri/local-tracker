@@ -29,6 +29,11 @@ uv run local-tracker
 
 Data is stored at `$XDG_DATA_HOME/local-tracker/data.json`, or
 `~/.local/share/local-tracker/data.json` when `XDG_DATA_HOME` is unset.
+The Flatpak additionally keeps the latest 50 recovery snapshots in
+`~/.local/share/local-tracker-backups/`. This directory is outside the source
+repository and Flatpak's private data, so it is not pushed to Git and survives
+application-data removal. If the live file is missing or damaged, the newest
+valid snapshot is restored automatically on launch.
 
 ## Add to Ubuntu applications
 

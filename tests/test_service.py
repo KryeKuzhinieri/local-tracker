@@ -89,3 +89,37 @@ def test_store_raises_if_primary_and_backup_are_invalid(tmp_path) -> None:
 
     with pytest.raises(StorageError):
         JsonStore(path).load()
+
+
+def test_store_recovers_from_external_history_after_data_removal(tmp_path) -> None:
+    path = tmp_path / "sandbox" / "data.json"
+    history = tmp_path / "external-history"
+    store = JsonStore(path, history_path=history)
+    data = AppData()
+    data.projects.append(service_project := service_project_factory())
+    store.save(data)
+    path.unlink()
+
+    recovered = JsonStore(path, history_path=history).load()
+
+    assert recovered.projects[0].id == service_project.id
+    assert path.exists()
+
+
+def test_snapshot_history_is_rotated(tmp_path) -> None:
+    path = tmp_path / "data.json"
+    history = tmp_path / "history"
+    store = JsonStore(path, history_path=history, history_limit=2)
+
+    for index in range(4):
+        data = AppData(schema_version=1)
+        data.projects.append(service_project_factory(f"Project {index}"))
+        store.save(data)
+
+    assert len(list(history.glob("data-*.json"))) == 2
+
+
+def service_project_factory(name: str = "Recovered"):
+    from local_tracker.models import Project
+
+    return Project(name=name)
