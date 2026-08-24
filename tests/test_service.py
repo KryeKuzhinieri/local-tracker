@@ -38,6 +38,41 @@ def test_only_one_timer_can_run(service: TrackerService) -> None:
         service.start(second.id)
 
 
+def test_dropdown_items_are_sorted_by_most_recent_use(
+    service: TrackerService,
+) -> None:
+    first_project = service.add_project("First project", "#7c6ff0")
+    second_project = service.add_project("Second project", "#3d8bfd")
+    older_task = service.add_task("Older task", first_project.id)
+    newest_task = service.add_task("Newest task", first_project.id)
+    middle_task = service.add_task("Middle task", second_project.id)
+    base = datetime(2026, 8, 20, tzinfo=timezone.utc)
+
+    for task, offset in (
+        (older_task, 0),
+        (middle_task, 1),
+        (newest_task, 2),
+    ):
+        entry = service.start(task.id)
+        start = base + timedelta(days=offset)
+        service.update_entry(
+            entry.id,
+            task.id,
+            "",
+            start,
+            start + timedelta(hours=1),
+        )
+
+    assert [project.id for project in service.active_projects()] == [
+        first_project.id,
+        second_project.id,
+    ]
+    assert [task.id for task in service.active_tasks(first_project.id)] == [
+        newest_task.id,
+        older_task.id,
+    ]
+
+
 def test_referenced_items_are_archived(service: TrackerService) -> None:
     project = service.add_project("Client", "#3d8bfd")
     task = service.add_task("Review", project.id)

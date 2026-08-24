@@ -63,12 +63,10 @@ class EntryEditor(Adw.Window):
         )
         self.service = service
         self.entry = entry
-        self.tasks = sorted(
-            service.data.tasks,
-            key=lambda task: (
-                service.project(task.project_id).name.casefold(),
-                task.name.casefold(),
-            ),
+        self.tasks = service.active_tasks() + sorted(
+            (task for task in service.data.tasks if task.archived),
+            key=lambda task: task.created_at,
+            reverse=True,
         )
 
         toolbar = Adw.ToolbarView()

@@ -35,19 +35,42 @@ class TrackerService:
         return next((entry for entry in self.data.entries if entry.running), None)
 
     def active_projects(self) -> list[Project]:
+        last_used: dict[str, str] = {}
+        for entry in self.data.entries:
+            last_used[entry.project_id] = max(
+                entry.start_at,
+                last_used.get(entry.project_id, ""),
+            )
         return sorted(
             (project for project in self.data.projects if not project.archived),
-            key=lambda project: project.name.casefold(),
+            key=lambda project: (
+                last_used.get(project.id, ""),
+                project.created_at,
+            ),
+            reverse=True,
         )
 
     def active_tasks(self, project_id: str | None = None) -> list[Task]:
+        last_used: dict[str, str] = {}
+        for entry in self.data.entries:
+            last_used[entry.task_id] = max(
+                entry.start_at,
+                last_used.get(entry.task_id, ""),
+            )
         tasks = (
             task
             for task in self.data.tasks
             if not task.archived
             and (project_id is None or task.project_id == project_id)
         )
-        return sorted(tasks, key=lambda task: task.name.casefold())
+        return sorted(
+            tasks,
+            key=lambda task: (
+                last_used.get(task.id, ""),
+                task.created_at,
+            ),
+            reverse=True,
+        )
 
     def add_project(self, name: str, color: str) -> Project:
         name = name.strip()
