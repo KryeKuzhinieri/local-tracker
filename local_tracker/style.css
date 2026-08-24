@@ -1,0 +1,90 @@
+window {
+  background: #111217;
+}
+
+.app-header {
+  background: alpha(#17191f, 0.96);
+  box-shadow: 0 1px alpha(black, 0.35);
+}
+
+.page {
+  padding: 24px;
+}
+
+.hero-card,
+.surface-card {
+  background: #1b1d24;
+  border: 1px solid alpha(white, 0.07);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px alpha(black, 0.16);
+}
+
+.hero-card {
+  padding: 24px;
+}
+
+.surface-card {
+  padding: 6px;
+}
+
+.timer {
+  font-size: 38px;
+  font-weight: 700;
+  font-feature-settings: "tnum";
+  letter-spacing: 0.02em;
+}
+
+.eyebrow {
+  color: #979ba8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.muted {
+  color: #979ba8;
+}
+
+.project-dot {
+  min-width: 10px;
+  min-height: 10px;
+  border-radius: 99px;
+}
+
+.entry-row {
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.entry-row:hover {
+  background: alpha(white, 0.035);
+}
+
+.start-button,
+.stop-button {
+  min-height: 44px;
+  padding-left: 24px;
+  padding-right: 24px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.start-button {
+  background: #7c6ff0;
+  color: white;
+}
+
+.stop-button {
+  background: #ef476f;
+  color: white;
+}
+
+.total {
+  font-size: 30px;
+  font-weight: 700;
+  font-feature-settings: "tnum";
+}
+
+.danger {
+  color: #ff6b7e;
+}

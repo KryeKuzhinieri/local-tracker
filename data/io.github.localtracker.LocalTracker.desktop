@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Local Tracker
+Comment=Private, offline time tracking
+Exec=local-tracker
+Icon=io.github.localtracker.LocalTracker
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=time;timer;tracker;project;offline;
+StartupNotify=true

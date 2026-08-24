@@ -1,0 +1,23 @@
+app-id: io.github.localtracker.LocalTracker
+runtime: org.gnome.Platform
+runtime-version: "48"
+sdk: org.gnome.Sdk
+command: local-tracker
+
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+
+modules:
+  - name: local-tracker
+    buildsystem: simple
+    build-commands:
+      - python3 -m pip install --no-deps --no-build-isolation --prefix=/app .
+      - install -Dm644 data/io.github.localtracker.LocalTracker.desktop /app/share/applications/io.github.localtracker.LocalTracker.desktop
+      - install -Dm644 data/io.github.localtracker.LocalTracker.metainfo.xml /app/share/metainfo/io.github.localtracker.LocalTracker.metainfo.xml
+      - install -Dm644 data/io.github.localtracker.LocalTracker.svg /app/share/icons/hicolor/scalable/apps/io.github.localtracker.LocalTracker.svg
+    sources:
+      - type: dir
+        path: ..

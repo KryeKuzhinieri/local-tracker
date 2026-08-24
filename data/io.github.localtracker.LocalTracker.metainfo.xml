@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.localtracker.LocalTracker</id>
+  <name>Local Tracker</name>
+  <summary>Private, offline time tracking</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <description>
+    <p>
+      Local Tracker is a focused time tracker for GNOME. Organize reusable tasks
+      by project, run one timer at a time, edit entries, and review project totals.
+      All information stays in a local JSON file.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.localtracker.LocalTracker.desktop</launchable>
+  <provides>
+    <binary>local-tracker</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-08-24"/>
+  </releases>
+</component>

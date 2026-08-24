@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-tracker"
+version = "0.1.0"
+description = "A private, offline time tracker for GNOME"
+requires-python = ">=3.11,<3.14"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "Local Tracker contributors" }]
+
+[project.scripts]
+local-tracker = "local_tracker.__main__:main"
+
+[tool.setuptools]
+packages = ["local_tracker"]
+
+[tool.setuptools.package-data]
+local_tracker = ["style.css"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0",
+]
+
+[tool.uv]
+package = true
+python-preference = "only-system"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
