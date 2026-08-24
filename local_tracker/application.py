@@ -4,6 +4,7 @@ from importlib.resources import files
 
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
+from .indicator import StatusNotifier
 from .service import TrackerService
 from .storage import StorageError
 
@@ -20,6 +21,7 @@ class LocalTrackerApplication(Adw.Application):
         )
         self.service: TrackerService | None = None
         self.window = None
+        self.indicator: StatusNotifier | None = None
         self._timer_held = False
 
         self.create_action("quit", self.on_quit, ["<primary>q"])
@@ -46,8 +48,15 @@ class LocalTrackerApplication(Adw.Application):
             self.service.store = None
             GLib.idle_add(self._fatal_storage_error, str(error))
             return
+        self.indicator = StatusNotifier(self, APP_ID)
+        self.indicator.start()
         self.service.subscribe(self._sync_background_state)
         self._sync_background_state()
+
+    def do_shutdown(self) -> None:
+        if self.indicator:
+            self.indicator.stop()
+        Adw.Application.do_shutdown(self)
 
     def do_activate(self) -> None:
         if self.service is None or self.service.data is None:
@@ -75,6 +84,8 @@ class LocalTrackerApplication(Adw.Application):
 
     def _sync_background_state(self) -> None:
         active = self.service.active_entry if self.service else None
+        if self.indicator:
+            self.indicator.update(active)
         if active:
             if not self._timer_held:
                 self.hold()

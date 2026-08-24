@@ -10,6 +10,7 @@ finish-args:
   - --socket=wayland
   - --device=dri
   - --filesystem=~/.local/share/local-tracker-backups:create
+  - --talk-name=org.kde.StatusNotifierWatcher
 
 modules:
   - name: local-tracker
