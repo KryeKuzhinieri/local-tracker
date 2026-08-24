@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from importlib.resources import files
+from typing import TYPE_CHECKING
 
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 from .indicator import StatusNotifier
 from .service import TrackerService
 from .storage import StorageError
+
+if TYPE_CHECKING:
+    from .window import MainWindow
 
 
 APP_ID = "io.github.localtracker.LocalTracker"
@@ -20,7 +24,7 @@ class LocalTrackerApplication(Adw.Application):
             flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
         )
         self.service: TrackerService | None = None
-        self.window = None
+        self.window: MainWindow | None = None
         self.indicator: StatusNotifier | None = None
         self._tray_held = False
         self._timer_held = False
@@ -45,10 +49,6 @@ class LocalTrackerApplication(Adw.Application):
         try:
             self.service = TrackerService()
         except StorageError as error:
-            self.service = TrackerService.__new__(TrackerService)
-            self.service.data = None
-            self.service._listeners = []
-            self.service.store = None
             GLib.idle_add(self._fatal_storage_error, str(error))
             return
         self.indicator = StatusNotifier(self, APP_ID)
@@ -64,13 +64,14 @@ class LocalTrackerApplication(Adw.Application):
         Adw.Application.do_shutdown(self)
 
     def do_activate(self) -> None:
-        if self.service is None or self.service.data is None:
+        if self.service is None:
             return
         if self.window is None:
             from .window import MainWindow
 
-            self.window = MainWindow(self, self.service)
-            self.window.connect("destroy", self._window_destroyed)
+            window = MainWindow(self, self.service)
+            window.connect("destroy", self._window_destroyed)
+            self.window = window
         self.window.present()
 
     def _window_destroyed(self, _window: Gtk.Window) -> None:
@@ -112,11 +113,13 @@ class LocalTrackerApplication(Adw.Application):
 
     def on_show_tracker(self, *_args) -> None:
         self.activate()
-        self.window.stack.set_visible_child_name("tracker")
+        if self.window:
+            self.window.stack.set_visible_child_name("tracker")
 
     def on_show_reports(self, *_args) -> None:
         self.activate()
-        self.window.stack.set_visible_child_name("reports")
+        if self.window:
+            self.window.stack.set_visible_child_name("reports")
 
     def on_stop_timer(self, *_args) -> None:
         if self.service:

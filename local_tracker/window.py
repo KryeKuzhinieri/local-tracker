@@ -5,7 +5,7 @@ from datetime import date, datetime
 from gi.repository import Adw, Gio, GLib, Gtk
 
 from .dialogs import EntryEditor, ManagerWindow, error_dialog
-from .models import TimeEntry, from_iso
+from .models import Project, Task, TimeEntry, from_iso
 from .service import TrackerError, TrackerService
 
 
@@ -30,8 +30,8 @@ class MainWindow(Adw.ApplicationWindow):
             default_height=720,
         )
         self.service = service
-        self.projects = []
-        self.tasks = []
+        self.projects: list[Project] = []
+        self.tasks: list[Task] = []
         self._destroyed = False
 
         toolbar = Adw.ToolbarView()
@@ -72,9 +72,11 @@ class MainWindow(Adw.ApplicationWindow):
         )
         self.stack.connect(
             "notify::visible-child-name",
-            lambda *_: self._refresh_report()
-            if self.stack.get_visible_child_name() == "reports"
-            else None,
+            lambda *_: (
+                self._refresh_report()
+                if self.stack.get_visible_child_name() == "reports"
+                else None
+            ),
         )
         self.switcher.set_stack(self.stack)
         toolbar.set_content(self.stack)
@@ -108,7 +110,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.status_label.add_css_class("eyebrow")
         self.active_title = Gtk.Label(label="Choose a task", xalign=0, ellipsize=3)
         self.active_title.add_css_class("title-2")
-        self.active_project = Gtk.Label(label="Everything stays on this device", xalign=0)
+        self.active_project = Gtk.Label(
+            label="Everything stays on this device", xalign=0
+        )
         self.active_project.add_css_class("muted")
         status_text.append(self.status_label)
         status_text.append(self.active_title)
@@ -139,9 +143,7 @@ class MainWindow(Adw.ApplicationWindow):
         form.attach(self._field("TASK", self.task_dropdown), 1, 0, 1, 1)
         hero.append(form)
 
-        self.note_entry = Gtk.Entry(
-            placeholder_text="Optional note about this session"
-        )
+        self.note_entry = Gtk.Entry(placeholder_text="Optional note about this session")
         self.note_entry.connect("changed", self._selection_changed)
         hero.append(self._field("NOTE", self.note_entry))
 
@@ -282,11 +284,7 @@ class MainWindow(Adw.ApplicationWindow):
             Gtk.StringList.new([task.name for task in self.tasks])
         )
         selected = next(
-            (
-                index
-                for index, task in enumerate(self.tasks)
-                if task.id == selected_id
-            ),
+            (index for index, task in enumerate(self.tasks) if task.id == selected_id),
             0,
         )
         if self.tasks:
@@ -389,9 +387,7 @@ class MainWindow(Adw.ApplicationWindow):
         title = Gtk.Label(label=entry.task_name, xalign=0, ellipsize=3)
         title.add_css_class("heading")
         start = local_datetime(entry.start_at)
-        subtitle_text = (
-            f"{entry.project_name} · {start.strftime('%a, %d %b · %H:%M')}"
-        )
+        subtitle_text = f"{entry.project_name} · {start.strftime('%a, %d %b · %H:%M')}"
         if entry.note:
             subtitle_text += f" · {entry.note}"
         subtitle = Gtk.Label(label=subtitle_text, xalign=0, ellipsize=3)
@@ -400,14 +396,20 @@ class MainWindow(Adw.ApplicationWindow):
         text.append(subtitle)
         row.append(text)
         duration = Gtk.Label(
-            label="Running" if entry.running else format_duration(entry.duration_seconds())
+            label=(
+                "Running"
+                if entry.running
+                else format_duration(entry.duration_seconds())
+            )
         )
         duration.add_css_class("monospace")
         row.append(duration)
         edit = Gtk.Button(icon_name="document-edit-symbolic")
         edit.add_css_class("flat")
         edit.set_tooltip_text("Edit entry")
-        edit.connect("clicked", lambda _button: EntryEditor(self, self.service, entry).present())
+        edit.connect(
+            "clicked", lambda _button: EntryEditor(self, self.service, entry).present()
+        )
         row.append(edit)
         delete = Gtk.Button(icon_name="user-trash-symbolic")
         delete.add_css_class("flat")

@@ -62,10 +62,10 @@ required. Installing the Flatpak also registers the application automatically.
 
 ## Test
 
-The data and business-logic tests do not require GTK:
+Run formatting, type checking, unit tests, and the personal-data guard together:
 
 ```sh
-uv run pytest
+./scripts/test.sh
 ```
 
 ## Build the Flatpak

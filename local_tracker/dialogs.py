@@ -7,7 +7,6 @@ from gi.repository import Adw, Gtk
 from .models import Project, Task, TimeEntry, from_iso
 from .service import TrackerError, TrackerService
 
-
 COLORS = [
     ("Violet", "#7c6ff0"),
     ("Blue", "#3d8bfd"),
@@ -97,7 +96,11 @@ class EntryEditor(Adw.Window):
         ]
         self.task_dropdown = Gtk.DropDown.new_from_strings(names)
         selected = next(
-            (index for index, task in enumerate(self.tasks) if task.id == entry.task_id),
+            (
+                index
+                for index, task in enumerate(self.tasks)
+                if task.id == entry.task_id
+            ),
             0,
         )
         self.task_dropdown.set_selected(selected)
@@ -225,9 +228,7 @@ class ItemEditor(Adw.Window):
                 if not self.projects:
                     raise TrackerError("Create a project first")
                 project = self.projects[self.secondary.get_selected()]
-                self.service.update_task(
-                    self.item.id, self.name.get_text(), project.id
-                )
+                self.service.update_task(self.item.id, self.name.get_text(), project.id)
         except (TrackerError, IndexError) as error:
             error_dialog(self, str(error))
             return
@@ -273,9 +274,7 @@ class ManagerWindow(Adw.Window):
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
         page.add_css_class("page")
         form = Gtk.Box(spacing=10)
-        self.project_name = Gtk.Entry(
-            placeholder_text="New project name", hexpand=True
-        )
+        self.project_name = Gtk.Entry(placeholder_text="New project name", hexpand=True)
         self.project_color = Gtk.DropDown.new_from_strings(
             [label for label, _ in COLORS]
         )
@@ -360,9 +359,7 @@ class ManagerWindow(Adw.Window):
         edit = Gtk.Button(icon_name="document-edit-symbolic", valign=Gtk.Align.CENTER)
         edit.set_tooltip_text("Edit")
         edit.connect("clicked", edit_cb)
-        remove = Gtk.Button(
-            icon_name="user-trash-symbolic", valign=Gtk.Align.CENTER
-        )
+        remove = Gtk.Button(icon_name="user-trash-symbolic", valign=Gtk.Align.CENTER)
         remove.set_tooltip_text("Delete or archive")
         remove.add_css_class("flat")
         remove.add_css_class("danger")

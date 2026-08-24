@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from gi.repository import Gio, GLib
 
-
 OBJECT_PATH = "/StatusNotifierItem"
 MENU_PATH = "/MenuBar"
 WATCHER_NAME = "org.kde.StatusNotifierWatcher"
@@ -251,10 +250,7 @@ class StatusNotifier:
         return values[property_name]
 
     def _layout(self) -> GLib.Variant:
-        children = [
-            self._menu_item(item_id)
-            for item_id in (1, 2, 3, 4, 5, 6)
-        ]
+        children = [self._menu_item(item_id) for item_id in (1, 2, 3, 4, 5, 6)]
         return GLib.Variant(
             "(u(ia{sv}av))",
             (self._revision, (0, {}, children)),

@@ -44,7 +44,8 @@ class TrackerService:
         tasks = (
             task
             for task in self.data.tasks
-            if not task.archived and (project_id is None or task.project_id == project_id)
+            if not task.archived
+            and (project_id is None or task.project_id == project_id)
         )
         return sorted(tasks, key=lambda task: task.name.casefold())
 
@@ -52,7 +53,9 @@ class TrackerService:
         name = name.strip()
         if not name:
             raise TrackerError("Project name is required")
-        if any(project.name.casefold() == name.casefold() for project in self.data.projects):
+        if any(
+            project.name.casefold() == name.casefold() for project in self.data.projects
+        ):
             raise TrackerError("A project with this name already exists")
         project = Project(name=name, color=color)
         self.data.projects.append(project)

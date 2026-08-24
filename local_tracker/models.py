@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-
 SCHEMA_VERSION = 1
 DEFAULT_COLOR = "#7c6ff0"
 

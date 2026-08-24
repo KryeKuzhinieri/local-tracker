@@ -43,7 +43,13 @@ class JsonStore:
             return AppData()
         try:
             return self._read(self.path)
-        except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
+        except (
+            OSError,
+            ValueError,
+            KeyError,
+            TypeError,
+            json.JSONDecodeError,
+        ) as error:
             recovered = self._load_recovery()
             if recovered is not None:
                 self.save(recovered, preserve_backup=True)
