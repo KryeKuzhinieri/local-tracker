@@ -250,8 +250,18 @@ class ManagerWindow(Adw.Window):
         toolbar.add_top_bar(header)
 
         self.stack = Adw.ViewStack()
-        self.stack.add_titled(self._project_page(), "projects", "Projects")
-        self.stack.add_titled(self._task_page(), "tasks", "Tasks")
+        self.stack.add_titled_with_icon(
+            self._project_page(),
+            "projects",
+            "Projects",
+            "folder-symbolic",
+        )
+        self.stack.add_titled_with_icon(
+            self._task_page(),
+            "tasks",
+            "Tasks",
+            "view-list-symbolic",
+        )
         switcher = Adw.ViewSwitcher()
         switcher.set_stack(self.stack)
         header.set_title_widget(switcher)

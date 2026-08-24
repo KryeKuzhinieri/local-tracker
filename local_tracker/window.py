@@ -82,8 +82,11 @@ class MainWindow(Adw.ApplicationWindow):
         self.set_content(toolbar)
         self.service.subscribe(self.refresh)
         self.connect("close-request", self._hide_to_tray)
+        self.connect("notify::visible", self._visibility_changed)
         self.connect("destroy", self._on_destroy)
-        self._timer_source = GLib.timeout_add_seconds(1, self._tick)
+        self._timer_source = 0
+        self._timer_interval = 0
+        self._schedule_tick()
         self.refresh()
 
     def _build_switcher(self) -> Gtk.Widget:
@@ -472,6 +475,18 @@ class MainWindow(Adw.ApplicationWindow):
         if active and self.get_visible():
             self.timer_label.set_label(format_duration(active.duration_seconds()))
         return GLib.SOURCE_CONTINUE
+
+    def _visibility_changed(self, *_args) -> None:
+        self._schedule_tick()
+
+    def _schedule_tick(self) -> None:
+        interval = 1 if self.get_visible() else 30
+        if self._timer_source and self._timer_interval == interval:
+            return
+        if self._timer_source:
+            GLib.source_remove(self._timer_source)
+        self._timer_interval = interval
+        self._timer_source = GLib.timeout_add_seconds(interval, self._tick)
 
     def _on_destroy(self, *_args) -> None:
         self._destroyed = True

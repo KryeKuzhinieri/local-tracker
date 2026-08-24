@@ -31,6 +31,8 @@ sed "s|^Exec=.*|Exec=$bin_dir/local-tracker|" \
   "$project_root/data/$app_id.desktop" >"$applications_dir/$app_id.desktop"
 chmod 644 "$applications_dir/$app_id.desktop"
 install -m 644 "$project_root/data/$app_id.svg" "$icons_dir/$app_id.svg"
+install -m 644 "$project_root/data/$app_id-inactive.svg" \
+  "$icons_dir/$app_id-inactive.svg"
 
 if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database "$applications_dir"

@@ -42,6 +42,7 @@ INTROSPECTION_XML = """
     <signal name="NewStatus">
       <arg name="status" type="s"/>
     </signal>
+    <signal name="NewIcon"/>
     <signal name="NewToolTip"/>
   </interface>
   <interface name="com.canonical.dbusmenu">
@@ -145,6 +146,13 @@ class StatusNotifier:
                 None,
                 OBJECT_PATH,
                 "org.kde.StatusNotifierItem",
+                "NewIcon",
+                None,
+            )
+            self.connection.emit_signal(
+                None,
+                OBJECT_PATH,
+                "org.kde.StatusNotifierItem",
                 "NewToolTip",
                 None,
             )
@@ -179,7 +187,7 @@ class StatusNotifier:
             self._menu_method(method_name, parameters, invocation)
             return
         if method_name in {"Activate", "SecondaryActivate"}:
-            GLib.idle_add(self.application.activate)
+            self.application.activate()
         invocation.return_value(None)
 
     def _menu_method(
@@ -233,7 +241,7 @@ class StatusNotifier:
             "Title": GLib.Variant("s", self._title()),
             "Status": GLib.Variant("s", "Active"),
             "WindowId": GLib.Variant("u", 0),
-            "IconName": GLib.Variant("s", self.app_id),
+            "IconName": GLib.Variant("s", self._icon_name()),
             "IconPixmap": GLib.Variant("a(iiay)", []),
             "OverlayIconName": GLib.Variant("s", ""),
             "AttentionIconName": GLib.Variant("s", self.app_id),
@@ -289,7 +297,7 @@ class StatusNotifier:
         }
         callback = callbacks.get(item_id)
         if callback:
-            GLib.idle_add(callback)
+            callback()
 
     def _start_label(self) -> str:
         task = self.application.last_startable_task()
@@ -299,3 +307,6 @@ class StatusNotifier:
         if self._active_entry:
             return f"{self._active_entry.task_name} · Local Tracker"
         return "Local Tracker"
+
+    def _icon_name(self) -> str:
+        return self.app_id if self._active_entry else f"{self.app_id}-inactive"
