@@ -499,7 +499,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._schedule_tick()
 
     def _schedule_tick(self) -> None:
-        interval = 1 if self.get_visible() else 30
+        interval = 1 if self.get_visible() else 60
         if self._timer_source and self._timer_interval == interval:
             return
         if self._timer_source:
