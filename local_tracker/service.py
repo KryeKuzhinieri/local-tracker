@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Callable
 
 from .models import AppData, Project, Task, TimeEntry, to_iso, utc_now
@@ -217,6 +217,27 @@ class TrackerService:
             total += seconds
             totals[(entry.project_name, entry.project_color)] += seconds
         return total, dict(totals)
+
+    def total_for_day(self, day: date, now: datetime | None = None) -> int:
+        """Return seconds overlapping a local calendar day, including a running timer."""
+        day_start = datetime.combine(day, time.min).astimezone(timezone.utc)
+        day_end = datetime.combine(day + timedelta(days=1), time.min).astimezone(
+            timezone.utc
+        )
+        current = now or utc_now()
+        total = 0
+        for entry in self.data.entries:
+            entry_start = datetime.fromisoformat(entry.start_at.replace("Z", "+00:00"))
+            entry_end = (
+                datetime.fromisoformat(entry.end_at.replace("Z", "+00:00"))
+                if entry.end_at
+                else current
+            )
+            overlap_start = max(entry_start, day_start)
+            overlap_end = min(entry_end, day_end)
+            if overlap_end > overlap_start:
+                total += int((overlap_end - overlap_start).total_seconds())
+        return total
 
     def project(self, project_id: str) -> Project:
         try:

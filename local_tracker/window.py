@@ -114,9 +114,19 @@ class MainWindow(Adw.ApplicationWindow):
         status_text.append(self.active_title)
         status_text.append(self.active_project)
         status.append(status_text)
-        self.timer_label = Gtk.Label(label="00:00:00", xalign=1, hexpand=True)
+        timer_group = Gtk.Box(
+            spacing=10,
+            halign=Gtk.Align.END,
+            valign=Gtk.Align.CENTER,
+            hexpand=True,
+        )
+        self.timer_label = Gtk.Label(label="00:00:00", xalign=1)
         self.timer_label.add_css_class("timer")
-        status.append(self.timer_label)
+        self.daily_total_label = Gtk.Label(label="(00:00:00)")
+        self.daily_total_label.add_css_class("daily-total")
+        timer_group.append(self.timer_label)
+        timer_group.append(self.daily_total_label)
+        status.append(timer_group)
         hero.append(status)
 
         form = Gtk.Grid(column_spacing=12, row_spacing=12)
@@ -360,6 +370,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.active_title.set_label("Choose a task")
             self.active_project.set_label("Everything stays on this device")
             self.timer_label.set_label("00:00:00")
+        self._refresh_daily_total()
         self._selection_changed()
 
     def _refresh_recent(self) -> None:
@@ -474,7 +485,12 @@ class MainWindow(Adw.ApplicationWindow):
         active = self.service.active_entry
         if active and self.get_visible():
             self.timer_label.set_label(format_duration(active.duration_seconds()))
+            self._refresh_daily_total()
         return GLib.SOURCE_CONTINUE
+
+    def _refresh_daily_total(self) -> None:
+        seconds = self.service.total_for_day(date.today())
+        self.daily_total_label.set_label(f"({format_duration(seconds)})")
 
     def _visibility_changed(self, *_args) -> None:
         self._schedule_tick()
